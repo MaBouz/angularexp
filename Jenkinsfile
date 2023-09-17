@@ -11,7 +11,7 @@ pipeline {
         }
         stage ("Clone Repo") {
             steps {
-                sh "git clone https://github.com/MaBouz/frontend.git"
+                sh "git clone https://github.com/MaBouz/angularexp.git"
             }
         }
         stage ("Generate Docker image") {
