@@ -23,8 +23,8 @@ pipeline {
         }
         stage ("push ocker image") {
             steps {
-                    sh "docker tag angularexp:1.1.${env.BUILD_NUMBER} malbouz/angularexp:1.1.${env.BUILD_NUMBER}"
-                    sh "docker push malbouz/angularexp:1.1.${env.BUILD_NUMBER}"        
+                sh "docker push malbouz/angularexp:1.1.${env.BUILD_NUMBER}"        
+                sh "docker tag angularexp:1.1.${env.BUILD_NUMBER} malbouz/angularexp:1.1.${env.BUILD_NUMBER}"
             }
         }
     }
