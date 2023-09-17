@@ -21,5 +21,12 @@ pipeline {
                 }
             }
         }
+        stage ("push Docker image") {
+            steps {
+                dir ("angularexp"){
+                    sh "docker push malbouz/angularexp:1.1.${env.BUILD_NUMBER} ."        
+                }
+            }
+        }
     }
 }
