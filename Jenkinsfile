@@ -23,7 +23,7 @@ pipeline {
         }
         stage ("push ocker image") {
             steps {
-                    sh "docker push malbouz/angularapp:1.1.${env.BUILD_NUMBER}"        
+                    sh "docker push malbouz/angularexp:1.1.${env.BUILD_NUMBER}"        
             }
         }
     }
