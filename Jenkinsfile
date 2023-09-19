@@ -17,7 +17,7 @@ pipeline {
         stage ("Generate Docker image") {
             steps {
                 dir ("angularexp"){
-                    sh "docker build -f dockerfile -t malbouz/angularexp:1.1.${env.BUILD_NUMBER} ."        
+                    sh "docker build -f dockerfile -t malbouz/angularexp:1.1.1 ."        
                 }
             }
         }
