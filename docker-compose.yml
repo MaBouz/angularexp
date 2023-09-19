@@ -3,4 +3,4 @@ services:
     image: malbouz/angularexp:1.1.1
     build:
       context: .
-    container_name: malbouz/angularexp
+    container_name: angularexp
