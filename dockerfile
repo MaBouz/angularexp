@@ -8,4 +8,3 @@ RUN npm run build --force
 RUN ls
 FROM nginx:alpine
 COPY --from=builder /app1/dist /usr/share/nginx/html
-EXPOSE 4200
