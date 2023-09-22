@@ -21,5 +21,12 @@ pipeline {
                 }
             }
         }
+        stage ("execute docker compose") {
+            steps {
+                dir ("angularexp"){
+                    sh "docker compose up -d"        
+                }
+            }
+        }
     }
 }
