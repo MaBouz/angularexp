@@ -1,204 +1,50 @@
-1. Install OpenJDK 11
-SSH to your Ubuntu server as a non-root user with sudo access.
-Install OpenJDK 11.
-
-$ sudo apt-get install openjdk-11-jdk -y
-
-------------------------------------------------------------------------------------------
-
-2. Install and Configure PostgreSQL
-Add the PostgreSQL repository.
-
-$ sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ `lsb_release -cs`-pgdg main"   /etc/apt/sources.list.d/pgdg.list'
- Add the PostgreSQL signing key.
-
-$ wget -q https://www.postgresql.org/media/keys... -O - | sudo apt-key add -
-
- Install PostgreSQL.
-
-$ sudo apt install postgresql postgresql-contrib -y
-
- Enable the database server to start automatically on reboot.
-
-$ sudo systemctl enable postgresql
-
- Start the database server.
-
-$ sudo systemctl start postgresql
-
- Change the default PostgreSQL password.
-
-$ sudo passwd postgres
-
- Switch to the postgres user.
-
-$ su - postgres
-
- Create a user named sonar.
-
-$ createuser sonar
-
- Log in to PostgreSQL.
-
-$ psql
-
- Set a password for the sonar user. Use a strong password in place of my_strong_password.
-
-ALTER USER sonar WITH ENCRYPTED password 'my_strong_password';
-
- Create a sonarqube database and set the owner to sonar.
-
-CREATE DATABASE sonarqube OWNER sonar;
-
- Grant all the privileges on the sonarqube database to the sonar user.
-
-GRANT ALL PRIVILEGES ON DATABASE sonarqube to sonar;
-
- Exit PostgreSQL.
-
-\q
-
- Return to your non-root sudo user account.
-
-$ exit
-
-
------------------------------------------------------------------------------------------
-
-
-3. Download and Install SonarQube
-Install the zip utility, which is needed to unzip the SonarQube files.
-
-$ sudo apt-get install zip -y
- Locate the latest download URL from the SonarQube official download page.
-
-Download the SonarQube distribution files.
-
-$ sudo wget https://binaries.sonarsource.com/Dist...
-Unzip the downloaded file.
-
-
-sudo unzip sonarqube-9.6.1.59531.zip
-
-
-Move the unzipped files to /opt/sonarqube directory
-
-sudo mv sonarqube-9.6.1.59531 sonarqube
-sudo mv sonarqube /opt/
-
-
-4. Add SonarQube Group and User
-Create a dedicated user and group for SonarQube, which can not run as the root user.
-
-Create a sonar group.
-
-$ sudo groupadd sonar
- Create a sonar user and set /opt/sonarqube as the home directory.
-
-$ sudo useradd -d /opt/sonarqube -g sonar sonar
- Grant the sonar user access to the /opt/sonarqube directory.
-
-$ sudo chown sonar:sonar /opt/sonarqube -R
-
-
------------------------------------------------------------------------------------------
-
-
-5. Configure SonarQube
- Edit the SonarQube configuration file.
-
-$ sudo nano /opt/sonarqube/conf/sonar.properties
-Find the following lines:
-
-#sonar.jdbc.username=
-#sonar.jdbc.password=
-Uncomment the lines, and add the database user and password you created in Step 2.
-
-sonar.jdbc.username=sonar
-sonar.jdbc.password=my_strong_password
-Below those two lines, add the sonar.jdbc.url.
-
-sonar.jdbc.url=jdbc:postgresql://localhost:5432/sonarqube
-Save and exit the file.
-
- 
-Edit the sonar script file.
-
-$ sudo nano /opt/sonarqube/bin/linux-x86-64/sonar.sh
-About 50 lines down, locate this line:
-
-#RUN_AS_USER=
-Uncomment the line and change it to:
-
-RUN_AS_USER=sonar
-Save and exit the file.
-
-
------------------------------------------------------------------------------------------
-
-6. Setup Systemd service
- Create a systemd service file to start SonarQube at system boot.
-
-$ sudo nano /etc/systemd/system/sonar.service
-Paste the following lines to the file.
-
-[Unit]
-Description=SonarQube service
-After=syslog.target network.target
-
-[Service]
-Type=forking
-
-ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
-ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
-
-User=sonar
-Group=sonar
-Restart=always
-
-LimitNOFILE=65536
-LimitNPROC=4096
-
-[Install]
-WantedBy=multi-user.target
- Save and exit the file.
-
-Enable the SonarQube service to run at system startup.
-
-$ sudo systemctl enable sonar
- Start the SonarQube service.
-
-$ sudo systemctl start sonar
- Check the service status.
-
-$ sudo systemctl status sonar
-
-
------------------------------------------------------------------------------------------
-
-
-7. Modify Kernel System Limits
-SonarQube uses Elasticsearch to store its indices in an MMap FS directory. It requires some changes to the system defaults.
-
- Edit the sysctl configuration file.
-
-$ sudo nano /etc/sysctl.conf
-Add the following lines.
-
-vm.max_map_count=262144
-fs.file-max=65536
-ulimit -n 65536
-ulimit -u 4096
-Save and exit the file.
-
- Reboot the system to apply the changes.
-
-$ sudo reboot
------------------------------------------------------------------------------------------
-
-8. Access SonarQube Web Interface
-
-Access SonarQube in a web browser at your server's IP address on port 9000. For example:
-
-http://IP:9000
-Log in with username admin and password admin. SonarQube will prompt you to change your password.
+1.	Mise à jour du système : Avant de commencer, assurez-vous que votre système Ubuntu est à jour en exécutant les commandes suivantes :
+sudo apt update
+sudo apt upgrade
+2.	Installation de Docker : Kubernetes utilise Docker pour exécuter les conteneurs. Vous pouvez installer Docker à l'aide des commandes suivantes :
+sudo apt install docker.io
+sudo systemctl enable docker
+sudo systemctl start docker
+3.	Installation de kubeadm, kubelet et kubectl : Ce sont les outils nécessaires pour installer et gérer un cluster Kubernetes. Vous pouvez les installer en exécutant les commandes suivantes :
+sudo apt install -y apt-transport-https curl
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo apt update
+sudo apt install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+4.	Initialisation du master : Maintenant, vous pouvez initialiser votre nœud comme un maître Kubernetes en utilisant la commande kubeadm init. Par exemple :
+sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+Notez que --pod-network-cidr est utilisé pour spécifier la plage IP pour le réseau pod. Vous pouvez utiliser une autre plage IP si celle-ci est déjà en conflit.
+5.	Configuration du fichier kubeconfig : Après avoir initialisé le maître, vous devez configurer le fichier kubeconfig en exécutant les commandes suivantes :
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+6.	Installation d'un réseau pod : Pour que les pods communiquent entre eux, vous devez installer un plugin réseau. Par exemple, vous pouvez utiliser Flannel :
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+Après avoir suivi ces étapes, vous aurez un maître Kubernetes fonctionnel sur votre système Ubuntu. Vous pouvez vérifier l'état du maître en exécutant kubectl get nodes.
+Questions :
+1.	Comment puis-je ajouter des nœuds au cluster une fois que le maître est installé ?
+2.	Quels sont les prérequis matériels recommandés pour exécuter un maître Kubernetes ?
+3.	Existe-t-il d'autres options de réseau pod disponibles en dehors de Flannel ?
+•	installation de deux noeuds et un master
+Pour installer deux nœuds et un maître Kubernetes, suivez les étapes ci-dessous :
+1.	Prérequis :
+o	Assurez-vous que les machines sur lesquelles vous prévoyez d'installer Kubernetes exécutent Ubuntu ou une distribution Linux prise en charge.
+o	Les machines doivent disposer d'une connectivité réseau pour communiquer entre elles.
+o	Il est recommandé d'avoir au moins 2 Go de RAM et 2 vCPU sur chaque machine.
+o	Désactivez le swap sur toutes les machines du cluster Kubernetes.
+2.	Installation du maître Kubernetes :
+o	Suivez les étapes d'installation du maître Kubernetes que j'ai décrites précédemment dans ma réponse précédente.
+o	Assurez-vous que le maître est correctement initialisé et en ligne.
+3.	Installation des nœuds Kubernetes :
+o	Sur chaque nœud, suivez les étapes d'installation de Docker que j'ai décrites dans ma réponse précédente.
+o	Installez kubeadm, kubelet et kubectl sur chaque nœud en exécutant les commandes suivantes :
+o	sudo apt install -y apt-transport-https curl
+o	curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+o	echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+o	sudo apt update
+o	sudo apt install -y kubelet kubeadm kubectl
+o	sudo apt-mark hold kubelet kubeadm kubectl
+o	Sur chaque nœud, exécutez la commande kubeadm join que vous avez obtenu lors de l'initialisation du maître pour joindre le cluster. Par exemple :
+o	sudo kubeadm join <adresse IP du maître>:<port> --token <token> --discovery-token-ca-cert-hash <hash>
+Le <token> et <hash> spécifiques seront uniques pour votre cluster, donc utilisez ceux qui sont générés lors de l'initialisation de votre maître.
