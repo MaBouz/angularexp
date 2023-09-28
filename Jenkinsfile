@@ -1,7 +1,7 @@
 pipeline {
     agent any 
     tools {
-        nodejs 'nodejs'
+        nodejs 'node'
     }
     stages {
         stage ("Clean") {
@@ -17,7 +17,7 @@ pipeline {
         stage ("Generate Docker image") {
             steps {
                 dir ("angularexp"){
-                    sh "docker build -f dockerfile -t malbouz/angularexp:1.1.1 ."        
+                    sh "docker build -f dockerfile -t angularexp ."        
                 }
             }
         }
