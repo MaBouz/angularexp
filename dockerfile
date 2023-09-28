@@ -1,17 +1,11 @@
-# Utilisation de l'image Node.js officielle en tant qu'image de base
-FROM node:14 as builder
-
-# Définition du répertoire de travail dans le conteneur
-WORKDIR /app
-
-# Copie du fichier package.json et package-lock.json
+FROM node:16-alpine AS build
+WORKDIR /app2
 COPY package*.json ./
-
-# Installation des dépendances
-RUN npm install
-
-# Copie des fichiers de l'application
+RUN npm install --force
 COPY . .
+RUN npm run build --force
 
-# Construction de l'application Angular
-RUN npm run build
+### STAGE 2: Run ###
+FROM nginx:1.17.1-alpine
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY --from=build /app2/dist /usr/share/nginx/html
