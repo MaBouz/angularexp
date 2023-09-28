@@ -1,4 +1,5 @@
 services:
-    image: angularexp
-    ports:
+    app:
+      image: angularexp
+      ports:
         - "0.0.0.0:4200:80"
